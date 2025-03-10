@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Fraud Detection Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .fraud-list {
+            margin-top: 20px;
+            padding: 0;
+            list-style-type: none;
+        }
+        .fraud-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .fraud {
+            background-color: #f8d7da;
+        }
+        .legit {
+            background-color: #d4edda;
+        }
+        .transaction-id {
+            font-weight: bold;
+        }
+        .decision {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-Time Fraud Detection Dashboard</h1>
+    <ul class="fraud-list">
+        {% for fraud_decision in fraud_decisions %}
+            <li class="fraud-item {{ 'fraud' if fraud_decision['is_fraud'] else 'legit' }}">
+                <span class="transaction-id">Transaction ID: {{ fraud_decision['transaction_id'] }}</span>
+                <div class="decision">
+                    <strong>Decision:</strong> {{ fraud_decision['decision'] }}<br>
+                    <strong>Fraud:</strong> {{ 'Yes' if fraud_decision['is_fraud'] else 'No' }}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        socket.on('new_fraud_decision', function(fraud_decision) {
+            // Add new fraud decision to the list dynamically
+            var listItem = document.createElement('li');
+            listItem.className = 'fraud-item ' + (fraud_decision.is_fraud ? 'fraud' : 'legit');
+
+            var transactionId = document.createElement('span');
+            transactionId.className = 'transaction-id';
+            transactionId.innerText = 'Transaction ID: ' + fraud_decision.transaction_id;
+
+            var decisionDiv = document.createElement('div');
+            decisionDiv.className = 'decision';
+            decisionDiv.innerHTML = '<strong>Decision:</strong> ' + fraud_decision.decision + '<br>' +
+                                    '<strong>Fraud:</strong> ' + (fraud_decision.is_fraud ? 'Yes' : 'No');
+
+            listItem.appendChild(transactionId);
+            listItem.appendChild(decisionDiv);
+
+            // Append the new item to the list
+            var fraudList = document.querySelector('.fraud-list');
+            fraudList.insertBefore(listItem, fraudList.firstChild);
+
+            // Limit the list to the most recent 10 items
+            var listItems = fraudList.getElementsByTagName('li');
+            if (listItems.length > 10) {
+                fraudList.removeChild(listItems[listItems.length - 1]);
+            }
+        });
+    </script>
+</body>
+</html>
